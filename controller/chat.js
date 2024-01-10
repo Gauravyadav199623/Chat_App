@@ -4,13 +4,14 @@ const Chat=require('../models/chatdata')
 
 const getChatData = async (req, res, next) => {
     try {
-        const chatData = await Chat.findAll({ include: User });
-        res.status(200).json({ chat: chatData, user: req.user }); // Include the 'name' property
+        const chatData = await Chat.findAll({ include: User }); // Include the User model
+        res.status(200).json({ chat: chatData, user: req.user });
     } catch (err) {
-        console.log(err);
+        console.error(err);
         res.status(500).json({ error: err.toString() });
     }
 };
+
 
 
 

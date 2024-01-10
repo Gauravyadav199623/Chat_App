@@ -26,8 +26,8 @@ async function onSubmit(e){
         if (res.status === 200) {
             messageElement.innerText = res.data.message;
             messageElement.className = 'message-success';
-            localStorage.setItem('token',res.data.token)
-            window.location.href = 'add-expense';
+            localStorage.setItem('token',res.data.token)  //? mind this
+            window.location.href = 'chat';
         }
     } catch (error) {
         if (error.response) {

@@ -9,10 +9,12 @@ const sequelize=require('./util/database');
 const app=express()
 const cors=require("cors")
 
-const User=require('./models/user');
 const Chat=require('./models/chatdata')
+const User=require('./models/user');
+
 
 const userRoutes=require('./routes/user')
+const chatRoutes=require('./routes/chatData')
 
 
 
@@ -22,6 +24,7 @@ app.use(cors())
 app.use(bodyParser.json({ extended: false }));
 app.use(express.static('public'));
 app.use(userRoutes)
+app.use(chatRoutes)
 
 
 User.hasMany(Chat)
