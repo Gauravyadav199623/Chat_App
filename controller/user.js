@@ -1,11 +1,13 @@
 const User=require('../models/user')
 
 const bcrypt = require('bcrypt');    // can encrypting password only way
-
+const jwt = require('jsonwebtoken');
 
 const saltRounds = 10;
 
-
+const generateAccessToken=(id,name)=>{
+    return jwt.sign({userId:id, name:name},'secreteKey')    //*encrypting data both way(ie can to decrypt to get the original values (approx))
+}
 
 
 const postAddUser=async(req,res,next)=>{
@@ -43,7 +45,7 @@ const userLogin=async(req,res,next)=>{
             bcrypt.compare(password,user.password,(err,result)=>{   //* comparing the encrypted password withe the entered one after converting it too
                 //this kind of encryption only work one way ie we can get back our originally entered value
                 if(result==true){
-                    res.status(200).json({  message: 'User login successfully'});
+                    res.status(200).json({  message: 'User login successfully',token: generateAccessToken(user.id, user.name)});
                     
                     // res.render('dashboard', { message: 'User login successfully' });
                 }else{
