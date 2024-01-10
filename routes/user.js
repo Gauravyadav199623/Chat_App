@@ -11,6 +11,8 @@ const router=express.Router()
 router.post('/add-user',userController.postAddUser )
 router.post('/login',userController.userLogin)
 
+router.get('/getUser/:userId',userController.getuserid)
+
 
 router.get("/login",(req,res,next)=>{
     res.sendFile("login.html",{root:"views"})
