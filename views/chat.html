@@ -63,14 +63,21 @@
         try {
             const response = await axios.get('getChatData', { headers: { "Authorization": token } });
             const user = response.data.user;
+            console.log(response.data);
 
             // Update the chatBox with the received messages
             chatBox.innerHTML = '';
 
-            response.data.chat.forEach(async msg => {
-                // Check if msg.User is present, otherwise fetch user information based on userId
-                const sender = msg.User ? msg.User.name : await fetchUserName(msg.userId);
-                const messageClass = userId === msg.userId ? 'userMessage' : 'otherMessage';
+            // response.data.chat.forEach(async msg => {
+            //     // Check if msg.User is present, otherwise fetch user information based on userId
+            //     const sender = msg.User ? msg.User.name : await fetchUserName(msg.userId);
+            //     const messageClass = userId === msg.userId ? 'userMessage' : 'otherMessage';
+            //     const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
+            //     chatBox.innerHTML += messageHTML;
+            // });
+            response.data.chat.forEach(msg => {
+                const sender = msg.userId === user.id ? user.name : msg.user.name;
+                const messageClass = msg.userId === user.id ? 'userMessage' : 'otherMessage';
                 const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
                 chatBox.innerHTML += messageHTML;
             });
@@ -83,18 +90,19 @@
     };
 
     // Function to fetch user name based on userId
-    const fetchUserName = async (userId) => {
-        try {
-            const userResponse = await axios.get(`getUser/${userId}`, { headers: { "Authorization": token } });
-            return userResponse.data.name;
-        } catch (error) {
-            console.error(`Error fetching user data for userId ${userId}:`, error);
-            return 'Unknown User';
-        }
-    };
+    // const fetchUserName = async (userId) => {
+    //     try {
+    //         const userResponse = await axios.get(`getUser/${userId}`, { headers: { "Authorization": token } });
+    //         return userResponse.data.name;
+    //     } catch (error) {
+    //         console.error(`Error fetching user data for userId ${userId}:`, error);
+    //         return 'Unknown User';
+    //     }
+    // };
 
     // Call the fetchChatData function on page load
     fetchChatData();
+    // setInterval(fetchChatData, 1000);
 
     // Event listener for submitting messages
     messageForm.addEventListener('submit', async function (event) {
