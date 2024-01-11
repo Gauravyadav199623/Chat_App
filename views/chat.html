@@ -21,6 +21,7 @@
             overflow-y: scroll;
             border: 1px solid #ccc;
             padding: 10px;
+            /* background-color: black; */
         }
         .message {
             margin: 5px 0;
@@ -59,10 +60,12 @@
     const messageForm = document.getElementById('messageForm');
     const userId = parseJwt(token).userId;
 
-    const fetchChatData = async () => {
+   const fetchChatData = async () => {
             try {
                 // Retrieve messages from local storage
                 const localMessages = getMessagesFromLocal();
+                console.log(localMessages);
+                
 
                 // Fetch new messages from the backend since the latest local message
                 const latestLocalMessageTimestamp = getLatestLocalMessageTimestamp(localMessages);
@@ -99,15 +102,45 @@
         // Function to get the timestamp of the latest local message
         const getLatestLocalMessageTimestamp = (messages) => {
             if (messages.length > 0) {
+                console.log(messages[messages.length - 1].createdAt+".......messages[messages.length - 1].createdAt");
                 return messages[messages.length - 1].createdAt;
             }
             return null;
         };
 
         // Function to save messages to local storage
-        const saveMessagesToLocal = (messages) => {
-            localStorage.setItem('chatMessages', JSON.stringify(messages));
-        };
+const saveMessagesToLocal = (newMessages) => {
+    // Retrieve existing messages from local storage
+    const storedMessages = getMessagesFromLocal();
+
+    // Check if each new message already exists in the stored messages
+    const uniqueNewMessages = newMessages.filter(newMsg => {
+        const isNewMessage = !storedMessages.some(storedMsg => storedMsg.id === newMsg.id);
+        return isNewMessage;
+    });
+//     const uniqueNewMessages = [];
+
+// for (let i = 0; i < newMessages.length; i++) {
+//     let isNewMessage = true;
+//     for (let j = 0; j < storedMessages.length; j++) {
+//         if (storedMessages[j].id === newMessages[i].id) {
+//             isNewMessage = false;
+//             break;
+//         }
+//     }
+//     if (isNewMessage) {
+//         uniqueNewMessages.push(newMessages[i]);
+//     }
+// }
+
+
+    // Combine existing and unique new messages
+    const allMessages = [...storedMessages, ...uniqueNewMessages];
+    console.log(allMessages,".....allMessages");
+
+    // Save the combined messages to local storage
+    localStorage.setItem('chatMessages', JSON.stringify(allMessages));
+};
 
         // Call the fetchChatData function on page load
         fetchChatData();

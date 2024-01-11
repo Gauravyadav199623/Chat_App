@@ -11,6 +11,8 @@ const cors=require("cors")
 
 const Chat=require('./models/chatdata')
 const User=require('./models/user');
+const Group=require('./models/group')
+const UserAndGroup = require('./models/userGroup');
 
 
 const userRoutes=require('./routes/user')
@@ -29,6 +31,12 @@ app.use(chatRoutes)
 
 User.hasMany(Chat)
 Chat.belongsTo(User)
+
+Group.hasMany(Chat)
+Chat.belongsTo(Group)
+
+User.belongsToMany(Group, {through : UserAndGroup})
+Group.belongsToMany(User, {through : UserAndGroup})
 
 sequelize
 .sync()
