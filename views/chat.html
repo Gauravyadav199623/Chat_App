@@ -60,72 +60,81 @@
     const userId = parseJwt(token).userId;
 
     const fetchChatData = async () => {
-        try {
-            const response = await axios.get('getChatData', { headers: { "Authorization": token } });
-            const user = response.data.user;
-            console.log(response.data);
+            try {
+                // Retrieve messages from local storage
+                const localMessages = getMessagesFromLocal();
 
-            // Update the chatBox with the received messages
-            chatBox.innerHTML = '';
+                // Fetch new messages from the backend since the latest local message
+                const latestLocalMessageTimestamp = getLatestLocalMessageTimestamp(localMessages);
+                const response = await axios.get('getChatData', { headers: { "Authorization": token, "Latest-Local-Timestamp": latestLocalMessageTimestamp } });
 
-            // response.data.chat.forEach(async msg => {
-            //     // Check if msg.User is present, otherwise fetch user information based on userId
-            //     const sender = msg.User ? msg.User.name : await fetchUserName(msg.userId);
-            //     const messageClass = userId === msg.userId ? 'userMessage' : 'otherMessage';
-            //     const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
-            //     chatBox.innerHTML += messageHTML;
-            // });
-            response.data.chat.forEach(msg => {
-                const sender = msg.userId === user.id ? user.name : msg.user.name;
-                const messageClass = msg.userId === user.id ? 'userMessage' : 'otherMessage';
-                const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
-                chatBox.innerHTML += messageHTML;
-            });
+                // Combine local and new messages
+                const allMessages = [...localMessages, ...response.data.chat];
 
-            // Scroll to the bottom of the chatBox to show the latest messages
-            chatBox.scrollTop = chatBox.scrollHeight;
-        } catch (error) {
-            console.error('Error fetching chat data:', error);
-        }
-    };
+                // Save all messages to local storage
+                saveMessagesToLocal(allMessages);
 
-    // Function to fetch user name based on userId
-    // const fetchUserName = async (userId) => {
-    //     try {
-    //         const userResponse = await axios.get(`getUser/${userId}`, { headers: { "Authorization": token } });
-    //         return userResponse.data.name;
-    //     } catch (error) {
-    //         console.error(`Error fetching user data for userId ${userId}:`, error);
-    //         return 'Unknown User';
-    //     }
-    // };
+                // Update the chatBox with all messages
+                chatBox.innerHTML = '';
+                allMessages.forEach(msg => {
+                    const sender = msg.userId === userId ? 'You' : msg.user.name;
+                    const messageClass = msg.userId === userId ? 'userMessage' : 'otherMessage';
+                    const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
+                    chatBox.innerHTML += messageHTML;
+                });
 
-    // Call the fetchChatData function on page load
-    fetchChatData();
-    // setInterval(fetchChatData, 1000);
-
-    // Event listener for submitting messages
-    messageForm.addEventListener('submit', async function (event) {
-        event.preventDefault();
-        const messageInput = document.getElementById('messageInput');
-        const message = messageInput.value.trim();
-
-        if (message === '') {
-            return; // Don't send empty messages
-        }
-
-        try {
-            const res = await axios.post('/postChat', { message }, { headers: { "Authorization": token } });
-            if (res.status === 201) {
-                console.log(res.data, "data..............");
-                // Fetch updated chat data after sending the message
-                fetchChatData();
+                // Scroll to the bottom of the chatBox to show the latest messages
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (error) {
+                console.error('Error fetching chat data:', error);
             }
-        } catch (error) {
-            console.error('Error sending message:', error);
-        }
-        messageInput.value = '';
-    });
-</script>
+        };
+
+        // Function to retrieve messages from local storage
+        const getMessagesFromLocal = () => {
+            const storedMessages = localStorage.getItem('chatMessages');
+            return storedMessages ? JSON.parse(storedMessages) : [];
+        };
+
+        // Function to get the timestamp of the latest local message
+        const getLatestLocalMessageTimestamp = (messages) => {
+            if (messages.length > 0) {
+                return messages[messages.length - 1].createdAt;
+            }
+            return null;
+        };
+
+        // Function to save messages to local storage
+        const saveMessagesToLocal = (messages) => {
+            localStorage.setItem('chatMessages', JSON.stringify(messages));
+        };
+
+        // Call the fetchChatData function on page load
+        fetchChatData();
+
+        // Event listener for submitting messages
+        messageForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
+            if (message === '') {
+                return; // Don't send empty messages
+            }
+
+            try {
+                // Send new message to the backend
+                const res = await axios.post('/postChat', { message }, { headers: { "Authorization": token } });
+                if (res.status === 201) {
+                    console.log(res.data, "data..............");
+                    // Fetch updated chat data after sending the message
+                    fetchChatData();
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+            messageInput.value = '';
+        });
+    </script>
 </body>
 </html>
