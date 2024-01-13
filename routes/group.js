@@ -8,4 +8,5 @@ const Auth=require('../MiddleWare/auth')
 router.post('/createGroup',Auth.authenticate,groupController.postCreateGroup)
 
 
+
 module.exports=router

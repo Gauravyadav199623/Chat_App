@@ -1,4 +1,5 @@
 const User=require('../models/user')
+const Group=require('../models/group')
 
 const bcrypt = require('bcrypt');    // can encrypting password only way
 const jwt = require('jsonwebtoken');
@@ -10,23 +11,37 @@ const generateAccessToken=(id,name)=>{
 }
 
 
-const postAddUser=async(req,res,next)=>{
-    // console.log(req.body)
-    const name=req.body.name;
-    const email=req.body.email;
-    const password=req.body.password; 
-    try{
-        bcrypt.hash(password,saltRounds, async(err,hash)=>{       //* encrypting password(one way)
+const postAddUser = async (req, res, next) => {
+    const name = req.body.name;
+    const email = req.body.email;
+    const password = req.body.password;
+    console.log('<<<<<<<<<<<<<<<<<<<<<<postAddUser>>>>>>>>>>>>>>>>>>>>>>>>');
 
-            const data=await User.create({name:name, email:email, password:hash}); //!kim
-            
-            res.status(201).json({userAdded:data, redirect: '/login'})
-        })
-    }catch(err){
+    try {
+        bcrypt.hash(password, saltRounds, async (err, hash) => {
+            const user = await User.create({ name: name, email: email, password: hash });
+            console.log("<<<<<<<<<<<<<<<<created user>>>>>>>>>>>>>>>>");
+
+            // Check if the common group exists, create it if not
+            const commonGroup = await Group.findOne({ where: { groupName: 'Common Group' } });
+            if (!commonGroup) {
+                const newCommonGroup = await Group.create({ groupName: 'Common Group' });
+                await newCommonGroup.addUsers(user, { through: { admin: false } });
+                await newCommonGroup.save();
+                console.log("<<<<<<<<<<<<<<<<new group>>>>>>>>>>>>>>>>");
+            } else {
+                await commonGroup.addUsers(user, { through: { admin: false } });
+                await commonGroup.save();
+                console.log("<added to comman<<<<<<<<<>");
+            }
+
+            res.status(201).json({ userAdded: user, redirect: '/login' });
+        });
+    } catch (err) {
         console.log(err);
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: 'Internal server error' });
     }
-}
+};
 
 
 const userLogin=async(req,res,next)=>{

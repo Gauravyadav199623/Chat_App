@@ -107,6 +107,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
     <script>
         const token = localStorage.getItem('token');
+        let groupId
+
         
         function parseJwt(token) {
             var base64Url = token.split('.')[1];
@@ -122,13 +124,14 @@
 
    const fetchChatData = async () => {
             try {
+                
                 // Retrieve messages from local storage
                 const localMessages = getMessagesFromLocal();
                 console.log(localMessages);
                 
 
                 // Fetch new messages from the backend since the latest local message
-                const latestLocalMessageTimestamp = getLatestLocalMessageTimestamp(localMessages);
+                const latestLocalMessageTimestamp = getLatestLocalMessageTimestampForGroup(localMessages, groupId);
                 const response = await axios.get('getChatData', { headers: { "Authorization": token, "Latest-Local-Timestamp": latestLocalMessageTimestamp } });
 
                 // Combine local and new messages
@@ -143,8 +146,14 @@
                     const sender = msg.userId === userId ? 'You' : msg.user.name;
                     const messageClass = msg.userId === userId ? 'userMessage' : 'otherMessage';
                     const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
-                    chatBox.innerHTML += messageHTML;
-                });
+                    if (msg.groupId === groupId) {
+                const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
+                chatBox.innerHTML += messageHTML;
+            } 
+            // else if(!msg.groupId){
+            //     chatBox.innerHTML = `<h3 style="color: red;">hello ${msg.user.name} join a group to start the conversation</h3>`;
+            // }              
+        });
 
                 // Scroll to the bottom of the chatBox to show the latest messages
                 chatBox.scrollTop = chatBox.scrollHeight;
@@ -160,7 +169,7 @@
         };
 
         // Function to get the timestamp of the latest local message
-        const getLatestLocalMessageTimestamp = (messages) => {
+        const getLatestLocalMessageTimestampForGroup = (messages,currentGroupId) => {
             if (messages.length > 0) {
                 console.log(messages[messages.length - 1].createdAt+".......messages[messages.length - 1].createdAt");
                 return messages[messages.length - 1].createdAt;
@@ -217,7 +226,7 @@ const saveMessagesToLocal = (newMessages) => {
 
             try {
                 // Send new message to the backend
-                const groupId = getCurrentGroupId(); // Implement a function to get the current group ID
+                // const groupId = getCurrentGroupId // Implement a function to get the current group ID
                 const res = await axios.post('/postChat', { message, groupId }, { headers: { "Authorization": token } });
                 if (res.status === 201) {
                     console.log(res.data, "data..............");
@@ -308,6 +317,18 @@ const displayUserSelectionPopup = async () => {
 // Fetch and display groups on page load
 
 
+const groupListContainer = document.getElementById('groupList');
+groupListContainer.addEventListener('click', (event) => {
+    if (event.target.tagName === 'BUTTON') {
+        console.log(event.target.id,".............event");
+        // Set the current group ID when a group button is clicked
+        currentGroupId =groupId
+         /* extract group ID from the clicked button or use any other logic */
+        // Fetch and display chat data for the clicked group
+        fetchChatDataForGroup(currentGroupId);
+    }
+});
+
 // Function to fetch updated groups data
 const fetchGroupsData = async () => {
     try {
@@ -317,7 +338,8 @@ const fetchGroupsData = async () => {
         const allGroups = groupsResponse.data.groups;
         console.log("...fetchGroupsData");
         console.log(allGroups,".....allGroups");
-
+        // groupId=allGroups.id
+        // console.log(groupId,"groupId");
         // Get the group list container
         const groupListContainer = document.getElementById('groupList');
         groupListContainer.innerHTML = '';
@@ -328,7 +350,9 @@ const fetchGroupsData = async () => {
             groupButton.textContent = group.groupName;
             groupButton.addEventListener('click', () => {
                 // Navigate to the group chat page
-                fetchChatDataForGroup(group.id);
+                 groupId = group.id;
+                console.log(groupId,"....groupId");
+                fetchChatDataForGroup(groupId);
             });
 
             const listItem = document.createElement('li');
@@ -352,17 +376,19 @@ const fetchGroupsData = async () => {
                 chatBox.innerHTML = '';
 
                 groupChat.forEach(msg => {
+                    console.log(groupChat,".........groupChat");
                     const sender = msg.userId === userId ? 'You' : msg.user.name;
                     const messageClass = msg.userId === userId ? 'userMessage' : 'otherMessage';
                     const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
                     chatBox.innerHTML += messageHTML;
                 });
+                // Scroll to the bottom of the chatBox to show the latest messages
+        chatBox.scrollTop = chatBox.scrollHeight;
 
             } catch (error) {
                 console.error('Error fetching group chat data:', error);
             }
         };
-        // fetchGroupsData();
         fetchGroupsData();
     </script>
 </body>

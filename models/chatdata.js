@@ -1,8 +1,10 @@
 const Sequelize=require('sequelize');
 const sequelize=require('../util/database');
 const User = require('./user'); // Import the User model
+const Group = require('./group'); // Import the User model
 
-const chat =sequelize.define('chat',{
+
+const Chat =sequelize.define('chat',{
     id:
     {
         type:Sequelize.INTEGER,
@@ -15,6 +17,7 @@ const chat =sequelize.define('chat',{
 })
 
 
-chat.belongsTo(User, { foreignKey: 'userId', as: 'User' });
+Chat.belongsTo(User, { foreignKey: 'userId', as: 'User' });
+Chat.belongsTo(Group, { foreignKey: 'groupId', as: 'Group' });
 
-module.exports=chat;
+module.exports=Chat;

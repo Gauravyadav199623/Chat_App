@@ -26,6 +26,17 @@ const postCreateGroup=async(req,res,next)=>{
          // Save the created group to the database
          await newGroup.save();
 
+            // Create a chat entry for the group to initialize the chat
+            const adminUser = await User.findByPk(req.user.id); // Assuming req.user.id is the admin user ID
+            const initialMessage = `Welcome to the group "${groupName}"!`; // Customize your initial message
+            await Chat.create({
+                message: initialMessage,
+                type: "system", // You might want a system message type for group initialization messages
+                userId: adminUser.id,
+                groupId: newGroup.id,
+            });
+
+
         res.status(201).json({ message: 'Group created successfully!' });
     } catch (error) {
         console.error('Error creating group:', error);

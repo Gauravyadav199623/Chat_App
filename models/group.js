@@ -1,8 +1,9 @@
 const Sequelize = require('sequelize');
 
 const sequelize = require('../util/database');
+const User=require('./user')
 
-const group=sequelize.define('group',{
+const Group=sequelize.define('group',{
     id:
     {
         type:Sequelize.INTEGER,
@@ -16,4 +17,7 @@ const group=sequelize.define('group',{
     }
 })
 
-module.exports=group
+
+Group.belongsToMany(User, { through: 'userGroup' });
+
+module.exports=Group
