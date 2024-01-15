@@ -86,6 +86,19 @@
             <h2>Groups</h2>
             <button id="createGroupButton">Create New Group</button>
             <ul id="groupList"></ul>
+            <div id="groupManagement">
+                <h3>Group Members</h3>
+                <ul id="memberList">
+                    <!-- List of group members -->
+                    <li>
+                        <!-- Action buttons -->
+                        <button onclick="makeAdmin(userId)">Make Admin</button>
+                        <button onclick="removeUser(userId)">Remove</button>
+                    </li>
+                    <!-- Repeat the above structure for each group member -->
+                </ul>
+                <!-- Button to create a new group -->
+            </div>
         </div>
         <div id="messages">
             <!-- Content for the messages section goes here -->

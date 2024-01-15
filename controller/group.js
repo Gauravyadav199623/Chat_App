@@ -1,7 +1,7 @@
 const User=require('../models/user')
 const Chat=require('../models/chatdata')
 const Group=require('../models/group')
-const UserGroup=require('../models/userGroup')
+const UserAndGroup=require('../models/userGroup')
 
 
 const postCreateGroup=async(req,res,next)=>{
@@ -27,14 +27,18 @@ const postCreateGroup=async(req,res,next)=>{
          await newGroup.save();
 
             // Create a chat entry for the group to initialize the chat
-            const adminUser = await User.findByPk(req.user.id); // Assuming req.user.id is the admin user ID
-            const initialMessage = `Welcome to the group "${groupName}"!`; // Customize your initial message
+            const user = await User.findByPk(req.user.id); // Assuming req.user.id is the admin user ID
+            const initialMessage = `Welcome to the group "${groupName}" ${user.name}`; // Customize your initial message
             await Chat.create({
                 message: initialMessage,
                 type: "system", // You might want a system message type for group initialization messages
-                userId: adminUser.id,
+                userId: user.id,
                 groupId: newGroup.id,
             });
+            const adminUser = await UserAndGroup.findOne({
+                where: { userId: req.user.id, groupId: newGroup.id },
+            });
+            await adminUser.update({ admin: true });
 
 
         res.status(201).json({ message: 'Group created successfully!' });
@@ -42,7 +46,7 @@ const postCreateGroup=async(req,res,next)=>{
         console.error('Error creating group:', error);
         res.status(500).json({ error: 'Internal Server Error' });    }
 }
-const getAllGroups=async (req, res) => {
+const getAllGroups=async (req, res, next) => {
     try {
         const groups = await Group.findAll();
         res.status(200).json({ groups });
