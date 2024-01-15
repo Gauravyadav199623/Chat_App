@@ -3,7 +3,7 @@ const Sequelize = require('sequelize');
 const sequelize = require('../util/database');
 
 
-const userAndGroup=sequelize.define('userAndGroup',{
+const userAndGroup=sequelize.define('UserAndGroup',{
     id:
     {
         type:Sequelize.INTEGER,

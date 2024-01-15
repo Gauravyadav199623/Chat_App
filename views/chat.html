@@ -238,7 +238,7 @@ const saveMessagesToLocal = (newMessages) => {
             }
             messageInput.value = '';
         });
-    // ... (existing JavaScript code remains the same) ...
+
 
 // Event listener for the "Create New Group" button
 const createGroupButton = document.getElementById('createGroupButton');
@@ -330,28 +330,29 @@ groupListContainer.addEventListener('click', (event) => {
 });
 
 // Function to fetch updated groups data
+// Function to fetch updated groups data
 const fetchGroupsData = async () => {
     try {
         // Fetch groups from the server
         console.log("...fetchGroupsData123");
-        const groupsResponse = await axios.get('/getAllGroups', { headers: { "Authorization": token } });
-        const allGroups = groupsResponse.data.groups;
-        console.log("...fetchGroupsData");
-        console.log(allGroups,".....allGroups");
-        // groupId=allGroups.id
-        // console.log(groupId,"groupId");
-        // Get the group list container
+
+        // Fetch user-specific group data
+        const userGroupsResponse = await axios.get('/getUserGroups', { headers: { "Authorization": token } });
+        const userGroups = userGroupsResponse.data.groups;
+        console.log(userGroupsResponse.data.groups);
+
         const groupListContainer = document.getElementById('groupList');
         groupListContainer.innerHTML = '';
 
-        // Create a button for each group
-        allGroups.forEach(group => {
+        // Create a button for each group that the user is a member of
+        console.log(userGroups,"............userGroups")
+        userGroups.forEach(group => {
             const groupButton = document.createElement('button');
             groupButton.textContent = group.groupName;
             groupButton.addEventListener('click', () => {
                 // Navigate to the group chat page
-                 groupId = group.id;
-                console.log(groupId,"....groupId");
+                groupId = group.id;
+                console.log(groupId, "....groupId");
                 fetchChatDataForGroup(groupId);
             });
 
@@ -360,35 +361,41 @@ const fetchGroupsData = async () => {
             groupListContainer.appendChild(listItem);
         });
     } catch (error) {
-        console.error('Error fetching groups:', error);
+        console.error('Error fetching user-specific groups:', error);
     }
 };
+
  // Function to fetch and display chat data for a specific group
  const fetchChatDataForGroup = async (groupId) => {
-            try {
-                const response = await axios.get(`/getChatData/${groupId}`, { headers: { "Authorization": token } });
-                const groupChat = response.data.chat;
-                console.log(".......fetchChatDataForGroup");
-                console.log(groupChat,"....groupChat");
+    try {
+        const response = await axios.get(`/getChatData/${groupId}`, { headers: { "Authorization": token } });
+        const groupChat = response.data.chat;
+        console.log(response, ".......fetchChatDataForGroup");
+        console.log(groupChat, "....groupChat");
 
-                // Update the chat box with group chat data
-                const chatBox = document.getElementById('chatBox');
-                chatBox.innerHTML = '';
+        // Fetch all users
+        const usersResponse = await axios.get('/getAllUsers', { headers: { "Authorization": token } });
+        const users = usersResponse.data.users;
 
-                groupChat.forEach(msg => {
-                    console.log(groupChat,".........groupChat");
-                    const sender = msg.userId === userId ? 'You' : msg.user.name;
-                    const messageClass = msg.userId === userId ? 'userMessage' : 'otherMessage';
-                    const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
-                    chatBox.innerHTML += messageHTML;
-                });
-                // Scroll to the bottom of the chatBox to show the latest messages
+        // Update the chat box with group chat data
+        const chatBox = document.getElementById('chatBox');
+        chatBox.innerHTML = '';
+
+        groupChat.forEach(msg => {
+            const user = users.find(user => user.id === msg.userId);
+            const sender = msg.userId === userId ? 'You' : (user?.name || 'Unknown User');
+            const messageClass = msg.userId === userId ? 'userMessage' : 'otherMessage';
+            const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
+            chatBox.innerHTML += messageHTML;
+        });
+
+        // Scroll to the bottom of the chatBox to show the latest messages
         chatBox.scrollTop = chatBox.scrollHeight;
+    } catch (error) {
+        console.error('Error fetching group chat data:', error);
+    }
+};
 
-            } catch (error) {
-                console.error('Error fetching group chat data:', error);
-            }
-        };
         fetchGroupsData();
     </script>
 </body>

@@ -2,6 +2,9 @@ const Sequelize = require('sequelize');
 
 const sequelize = require('../util/database');
 const User=require('./user')
+const UserAndGroup = require('./userGroup'); // Import the UserAndGroup model
+
+
 
 const Group=sequelize.define('group',{
     id:
@@ -18,6 +21,6 @@ const Group=sequelize.define('group',{
 })
 
 
-Group.belongsToMany(User, { through: 'userGroup' });
+// Group.belongsToMany(User, { through: 'UserAndGroup' });
 
 module.exports=Group
