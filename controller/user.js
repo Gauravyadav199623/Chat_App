@@ -94,11 +94,22 @@ const getuserid=async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
-
+const getAllUsers=async (req, res, next) => {
+    try {
+      // Assuming you have a model named User
+      const users = await User.findAll(); // Adjust this based on your model
+  
+      res.status(200).json({ users });
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 
 module.exports={
   
     postAddUser,
     userLogin,
-    getuserid
+    getuserid,
+    getAllUsers
 }

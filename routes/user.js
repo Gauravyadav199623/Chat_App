@@ -12,6 +12,7 @@ router.post('/add-user',userController.postAddUser )
 router.post('/login',userController.userLogin)
 
 router.get('/getUser/:userId',userController.getuserid)
+router.get('/getAllUsers',userController.getAllUsers)
 
 
 router.get("/login",(req,res,next)=>{

@@ -42,6 +42,38 @@ const postCreateGroup=async(req,res,next)=>{
         console.error('Error creating group:', error);
         res.status(500).json({ error: 'Internal Server Error' });    }
 }
+const getAllGroups=async (req, res) => {
+    try {
+        const groups = await Group.findAll();
+        res.status(200).json({ groups });
+    } catch (error) {
+        console.error('Error fetching groups:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+const getGroupChat=async (req, res) => {
+    try {
+        const groupId = req.params.groupId;
+        const groupChat = await Chat.findAll({ where: { groupId } });
+        res.status(200).json({ chat: groupChat });
+    } catch (error) {
+        console.error('Error fetching chat data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+const getUserGroups=async (req, res) => {
+    try {
+        const user=req.user;
+        // console.log(req,".................user");
+        const groups=await user.getGroups()
+        return res.status(200).json({ groups, message: "All groups successfully fetched" })
+    } catch (error) {
+        console.log(error);
+    }
+  }
 module.exports={
-    postCreateGroup
+    postCreateGroup,
+    getAllGroups,
+    getGroupChat,
+    getUserGroups
 }
