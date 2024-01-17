@@ -6,8 +6,18 @@ const bodyParser=require('body-parser');
 const sequelize=require('./util/database');
 
 
-const app=express()
 const cors=require("cors")
+const http = require('http');
+// const socketIO = require('socket.io');
+const app=express()
+require('dotenv').config();
+
+
+const server=http.createServer(app);
+const{Server}=require('socket.io')
+const io=new Server(server)
+// const socketService = require("./services/websocket")
+
 
 const Chat=require('./models/chatdata')
 const User=require('./models/user');
@@ -21,7 +31,6 @@ const groupRoutes=require('./routes/group')
 
 
 
-
 app.use(cors())
 // app.use(express.static(__dirname));
 app.use(bodyParser.json({ extended: false }));
@@ -29,6 +38,24 @@ app.use(express.static('public'));
 app.use(userRoutes)
 app.use(chatRoutes)
 app.use(groupRoutes)
+
+
+io.on('connection', (socket) => {
+    console.log(`User connected with id: ${socket.id}`);
+
+    socket.on('chatMessage', (data) => {
+        console.log('Received chat message on server:', data);
+        io.to(data.groupId).emit('chatMessage', { message: data.message, groupId: data.groupId,name:data.tokenName });
+    });
+
+    socket.on('joinGroup', (groupId) => {
+        console.log("groupId join",groupId);
+        socket.join(groupId);
+    });
+
+    // ... (other code)
+});
+
 
 
 
@@ -49,7 +76,7 @@ sequelize
 .sync()
 // .sync({force:true})
 .then(result=>{
-    app.listen(4000);
+    server.listen(4000);
 })
 .catch(err=>{
     console.log(err)

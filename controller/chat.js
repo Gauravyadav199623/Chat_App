@@ -18,7 +18,7 @@ const getChatData = async (req, res, next) => {
                 where: { groupId: groupId }
             });
         } else {
-            // If groupId is not provided (common group), exclude the Group model
+            // If groupId is not provided (for first page), exclude the Group model
             chatData = await Chat.findAll({
                 include: [{ model: User }]
             });

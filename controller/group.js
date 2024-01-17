@@ -75,9 +75,120 @@ const getUserGroups=async (req, res) => {
         console.log(error);
     }
   }
+  const getGroupUser = async (req, res, next) => {
+    try {
+        const groupId = req.params.groupId;
+        console.log(">>>>>>>>>>>>>>>>>>>>",groupId,"<<<<<<<<<<<<<<<<<<<<<<<<<");
+        const group = await Group.findByPk(groupId);
+        const groupUsers = await group.getUsers();//! kim sequelize(tabel1.gettabel2)
+        // const groupUsers = await User.findAll({
+        //     include: [{
+        //         model: Group,
+        //         as: 'groups',
+        //         where: { id: groupId },
+        //         through: {model: UserAndGroup, attributes: [] },  // This line excludes the junction table from the result
+        //     }],
+        // });
+        res.status(200).json({ users: groupUsers });
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+const removeUserFromGroup = async (req, res, next) => {
+    try {
+        const { memberId, groupId } = req.body;
+        const group = await Group.findByPk(groupId);
+
+        // Check if the requester is an admin of the group
+        const adminUser = await UserAndGroup.findOne({
+            where: { userId: req.user.id, groupId: groupId }
+        });
+
+        if (!adminUser || !adminUser.admin) {
+            return res.status(403).json({ message: 'Permission denied. User must be an admin to perform this operation.' });
+        }
+
+        // Check if the user to be removed exists in the group
+        const userToRemove = await UserAndGroup.findOne({
+            where: { userId: memberId, groupId: groupId }
+        });
+
+        if (!userToRemove) {
+            return res.status(404).json({ message: 'User not found in the group.' });
+        }
+
+        // Remove the user from the group
+        await group.removeUser(memberId);
+
+        res.status(200).json({ message: 'User removed from the group successfully' });
+    } catch (error) {
+        console.error('Error removing user from group:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+
+
+const makeUserAdmin = async (req, res, next) => {
+    try {
+        const { memberId, groupId } = req.body;
+
+        // Check if the requester is an admin of the group
+        const adminUser = await UserAndGroup.findOne({
+            where: { userId: req.user.id, groupId: groupId }
+        });
+
+        if (!adminUser || !adminUser.admin) {
+            return res.status(403).json({ message: 'Permission denied. User must be an admin to perform this operation.' });
+        }
+
+        // Check if the user to be made admin exists in the group
+        const newAdmin = await UserAndGroup.findOne({
+            where: { userId: memberId, groupId: groupId }
+        });
+
+        await newAdmin.update({ admin: true });
+
+        res.status(200).json({ message: 'User is now an admin.' });
+    } catch (error) {
+        console.error('Error making user admin:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+const addNewGroupMembers=async(req,res,next)=>{
+    try {
+        const { groupId, members } = req.body;
+
+        // Fetch the existing group
+        const group = await Group.findByPk(groupId);
+
+        // Fetch the users to be added
+        const usersToAdd = await User.findAll({
+            where: {
+                id: members,
+            },
+        });
+
+        // Add users to the existing group
+        await group.addUsers(usersToAdd, { through: { admin: false } });
+
+        res.status(200).json({ message: 'Users added to the group successfully!' });
+    } catch (error) {
+        console.error('Error adding users to the group:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
+
+
 module.exports={
     postCreateGroup,
     getAllGroups,
     getGroupChat,
-    getUserGroups
+    getUserGroups,
+    getGroupUser,
+    removeUserFromGroup,
+    makeUserAdmin,
+    addNewGroupMembers
 }

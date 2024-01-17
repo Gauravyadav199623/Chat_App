@@ -77,6 +77,13 @@
             display: block;
             margin-bottom: 10px; /* Adjust the margin as needed */
         }
+        /* #groupManagement{
+            style:none
+        } */
+        #groupList{
+            list-style-type: none;
+
+        }
     </style>
 </head>
 <body>
@@ -84,19 +91,12 @@
         <div id="groups">
             <!-- Content for the groups section goes here -->
             <h2>Groups</h2>
-            <button id="createGroupButton">Create New Group</button>
+            <button onclick="allGroupMember(userId)">Group Member</button><br>
             <ul id="groupList"></ul>
+            <button id="createGroupButton">Create New Group</button><br>
             <div id="groupManagement">
-                <h3>Group Members</h3>
-                <ul id="memberList">
-                    <!-- List of group members -->
-                    <li>
-                        <!-- Action buttons -->
-                        <button onclick="makeAdmin(userId)">Make Admin</button>
-                        <button onclick="removeUser(userId)">Remove</button>
-                    </li>
-                    <!-- Repeat the above structure for each group member -->
-                </ul>
+                <!-- <h3>Group Members</h3> -->
+                <ul id="memberList"><!-- List of group members --></ul>
                 <!-- Button to create a new group -->
             </div>
         </div>
@@ -118,6 +118,8 @@
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.5.0/axios.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="/JS/chat.js"></script>
+    
 </body>
 </html>
