@@ -15,7 +15,17 @@ require('dotenv').config();
 
 const server=http.createServer(app);
 const{Server}=require('socket.io')
-const io=new Server(server)
+const { instrument } = require("@socket.io/admin-ui");
+const io=new Server(server, {
+    cors: {
+      origin: ["https://admin.socket.io"],
+      credentials: true
+    }
+  });
+  
+  instrument(io, {
+    auth: false
+  });
 // const socketService = require("./services/websocket")
 
 
@@ -53,8 +63,8 @@ io.on('connection', (socket) => {
         socket.join(groupId);
     });
 
-    // ... (other code)
 });
+
 
 
 
