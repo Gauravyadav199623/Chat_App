@@ -55,7 +55,17 @@ io.on('connection', (socket) => {
 
     socket.on('chatMessage', (data) => {
         console.log('Received chat message on server:', data);
-        io.to(data.groupId).emit('chatMessage', { message: data.message, groupId: data.groupId,name:data.tokenName });
+        if(data.messageType=="text")
+        {
+            io.to(data.groupId).emit('chatMessage', { messageType:data.messageType,message: data.message, groupId: data.groupId,name:data.tokenName });
+        }
+        else{
+            io.to(data.groupId).emit('chatMessage', {
+                messageType:data.messageType,
+                message:  data.message,
+                groupId: data.groupId,
+                name:data.tokenName});
+            }
     });
 
     socket.on('joinGroup', (groupId) => {
@@ -64,6 +74,19 @@ io.on('connection', (socket) => {
     });
 
 });
+
+
+
+// const multer = require('multer');
+// const { uploadToS3 } = require('./services/S3services'); // Adjust the path accordingly
+
+
+// // Set up multer to handle file uploads
+// const storage = multer.memoryStorage(); // Store files in memory
+// const upload = multer({ storage: storage });
+
+// // Your route for handling image uploads
+// app.post('/uploadImage', upload.single('image'), );
 
 
 

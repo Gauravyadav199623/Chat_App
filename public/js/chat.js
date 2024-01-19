@@ -2,6 +2,7 @@ const socket = io('http://localhost:4000');
 
 const chatBox = document.getElementById('chatBox');
 const messageForm = document.getElementById('messageForm');
+const fileInput = document.getElementById('imageInput'); // Add an input element for file uploads
 
 
 let groupId
@@ -23,23 +24,24 @@ const token = localStorage.getItem('token');
     const tokenData=parseJwt(token)
     const tokenName=parseJwt(token).name
     // console.log(tokenData),"tokenDatatokenDatatokenDatatokenData"
-    socket.on('chatMessage', (data) => {
-        console.log('Received chat message from server:', data);
-        console.log("dataTop.............",data)
-        // Check if the received message belongs to the current group
-        if (data.groupId === groupId) {
-            // Update the chat interface with the new message
-            const messageHTML = `<p class="otherMessage"><strong>${data.name}:</strong> ${data.message}</p>`;
-            
-    
-    
-            chatBox.innerHTML += messageHTML;
-    
-            // Scroll to the bottom of the chatBox to show the latest messages
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-    });
+  // Event listener for receiving chat messages from the server
+  socket.on('chatMessage', (data) => {
+    console.log('Received chat message from server:', data);
+    // Update the chat interface with the new message or image
+    if (data.messageType === 'text')
+     {
+        const messageHTML = `<p class="otherMessage"><strong>${data.name}:</strong> ${data.message}</p>`;
+        chatBox.innerHTML += messageHTML;
+    } else if (data.messageType === 'image') {
 
+        console.log('Image URL:', data.message);
+
+        const imageHTML = `<p class="otherMessage"><strong>${data.name}:</strong> <img src="${data.message}" alt="Image" style="max-width: 300px; max-height: 200px;" /></p>`;
+        chatBox.innerHTML += imageHTML;
+    }
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+    
    const fetchChatData = async () => {
             try {
                 
@@ -64,12 +66,20 @@ const token = localStorage.getItem('token');
 
                 // Update the chatBox with all messages
                 chatBox.innerHTML = '';
+                console.log(allMessages,"......allMessages");
                 allMessages.forEach(msg => {
                     const sender = msg.userId === userId ? 'You' : msg.user.name;
                     const messageClass = msg.userId === userId ? 'userMessage' : 'otherMessage';
                     if (msg.groupId === groupId) {
-                const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
-                chatBox.innerHTML += messageHTML;
+                        if(msg.isImage==false)
+                        {
+                            const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
+                            chatBox.innerHTML += messageHTML;
+                        }
+                        else {
+                            const imageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> <img src="${msg.message}" alt="Image" style="max-width: 300px; max-height: 200px;" /></p>`;
+                            chatBox.innerHTML += imageHTML;
+                        }
             } 
             // else{
             //     chatBox.innerHTML = `<h3 style="color: red;">hello ${response.data.user.name}, join a group to start the conversation</h3>`;
@@ -132,39 +142,78 @@ const saveMessagesToLocal = (newMessages) => {
     localStorage.setItem('chatMessages', JSON.stringify(allMessages));
 };
 
-        // Call the fetchChatData function on page load
-        // fetchChatData();
 
 // Event listener for submitting messages
 messageForm.addEventListener('submit', async function (event) {
     event.preventDefault();
     
     const messageInput = document.getElementById('messageInput');
-    const message = messageInput.value.trim();
+    const fileInput = document.getElementById('imageInput');
 
-    if (message === '') {
+    const message = messageInput.value.trim();
+    const file = fileInput.files[0];
+
+
+    if (message === '' && !file) {
         return; // Don't send empty messages
     }
 
     try {
-        // Send new message to the backend
-        const res = await axios.post('/postChat', { message, groupId }, { headers: { "Authorization": token } });
-        console.log(res.data,"sent chat data");
+        if (file) {
+            // If an image is selected, upload it and send the image URL
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('groupId', groupId);
 
-        if (res.status === 201) {
-            // Emit the 'chatMessage' event to the server after successfully posting to the backend
-            //!socket
-            socket.emit('chatMessage', {message, groupId,tokenName} );
-            
-            // Fetch updated chat data after sending the message
+            const response = await axios.post('/uploadImage', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': token
+                }
+            });
+
+            // Emit the 'chatMessage' event to the server with the image URL
+            socket.emit('chatMessage', { messageType: 'image', message: response.data.mediaUrl, groupId, tokenName });
             fetchChatData(groupId);
+
+
+        }else{
+            
+
+            const res = await axios.post('/postChat', { message, groupId }, { headers: { "Authorization": token } });
+            console.log(res.data,"sent chat data");
+
+            if (res.status === 201) {
+                // Emit the 'chatMessage' event to the server after successfully posting to the backend
+                //!socket
+                socket.emit('chatMessage', {messageType: 'text',message, groupId,tokenName} );
+                
+                // Fetch updated chat data after sending the message
+                fetchChatDataForGroup(groupId);
+            }
         }
     } catch (error) {
         console.error('Error sending message:', error);
-    }
+            }
+
 
     messageInput.value = '';
+    imageInput.value = '';
+
 });
+async function uploadImage(imageFile) {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    const response = await axios.post('/uploadImage', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': token
+        }
+    });
+
+    return response.data.mediaUrl; // Assuming your server returns the media URL
+}
 
 
 
@@ -317,8 +366,15 @@ const fetchGroupsData = async () => {
             const user = users.find(user => user.id === msg.userId);
             const sender = msg.userId === userId ? 'You' : (user?.name || 'Unknown User');
             const messageClass = msg.userId === userId ? 'userMessage' : 'otherMessage';
-            const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
-            chatBox.innerHTML += messageHTML;
+            if(msg.isImage==false)
+            {
+                const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
+                chatBox.innerHTML += messageHTML;
+            }
+            else {
+                const imageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> <img src="${msg.message}" alt="Image" style="max-width: 300px; max-height: 200px;" /></p>`;
+                chatBox.innerHTML += imageHTML;
+            }
         });
         // socket.emit('chatMessage', {message, groupId} );
 
