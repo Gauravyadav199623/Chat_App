@@ -27,15 +27,14 @@ async function onSubmit(e) {
         console.log(data);
         
       //  Add the user to the common group upon successful signup
-        // const addToCommonGroupResponse = await axios.post('/addToCommonGroup', { userId }, { headers: { "Authorization": token } });
         
-        // if (addToCommonGroupResponse.status === 201) {
-        //     console.log('User added to the common group successfully!');
-        //     // Redirect to the desired page after signup, e.g., dashboard
-        //     window.location.href = 'chat';
-        // } else {
-        //     console.error('Error adding user to the common group:', addToCommonGroupResponse.data.error);
-        // }
+        if (response.status === 201) {
+            console.log('User added to the common group successfully!');
+            // Redirect to the desired page after signup, e.g., dashboard
+            window.location.href = 'chat';
+        } else {
+            console.error('Error adding user to the common group:', addToCommonGroupResponse.data.error);
+        }
         e.target.name.value='';
         e.target.email.value='';
         e.target.password.value='';

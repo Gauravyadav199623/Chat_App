@@ -2,6 +2,7 @@ const User=require('../models/user')
 const Chat=require('../models/chatdata')
 const Group=require('../models/group')
 const { uploadToS3 } = require('../services/S3services'); // Adjust the path accordingly
+const { text } = require('body-parser');
 
 
 
@@ -45,9 +46,10 @@ const postChat = async (req, res, next) => {
 
         const data = await Chat.create({
             message: message,
-            isImage: false,
+            isMedia: false,
             userId: userId,
-            groupId: groupId // Include group ID in the chat entry
+            groupId: groupId,
+            mediaType:"text"
 
         });
         res.status(201).json({ newMessage: data });
@@ -57,31 +59,41 @@ const postChat = async (req, res, next) => {
     }
 };
 
-const uploadImage=async (req, res) => {
+const uploadMedia = async (req, res) => {
     try {
-        // Access the uploaded file from req.file.buffer
-        const imageData = req.file.buffer;
-        const groupId = req.body.groupId; // Extract group ID from the request body
+        const groupId = req.body.groupId;
         const userId = req.user.id;
+        const mediaData = req.files.map(file => ({
+            data: file.buffer,
+            filename: `group${groupId}/user${userId}/${Date.now()}_${file.originalname}`
+        }));
 
-        const filename = `group${groupId}/user${userId}/${Date.now()}_${req.file.originalname}`;
+        // Determine media type based on the file extension
+        const mediaType = req.files[0].mimetype.startsWith('image/') ? 'image' : 'video';
 
-        // Use your S3 upload function to upload the image to AWS S3
-        const imageUrl = await uploadToS3(imageData, filename);
+        const mediaUrls = await Promise.all(mediaData.map(async media => {
+            const mediaUrl = await uploadToS3(media.data, media.filename);
+            return mediaUrl;
+        }));
+        
         console.log(req.body,"<<<<<<<<<<<<<<<<req.body");
-        console.log(imageUrl,"<<<<<<<<<<<<<<<<imageUrl");
-        // Create a chat entry for the uploaded image
-        const data = await Chat.create({
-            message: imageUrl,
-            userId: userId, 
-            groupId: groupId, 
-            isImage: true
-        });
+        console.log(req.files,"<<<<<<<<<<<<<<<<req.file");
+        // console.log(imageUrls,"<<<<<<<<<<<<<<<<imageUrl");
 
-        // Respond with the generated media URL
-        res.json({ mediaUrl: imageUrl,data:data });
+        const chatEntries = await Promise.all(mediaUrls.map(async mediaUrl => {
+            const data = await Chat.create({
+                message: mediaUrl,
+                userId: userId,
+                groupId: groupId,
+                isMedia: true, // Change this to 'isMedia' or 'isImage' as needed
+                mediaType: mediaType
+            });
+            return data;
+        }));
+
+        res.json({ mediaUrls: mediaUrls, mediaType: mediaType, data: chatEntries });
     } catch (error) {
-        console.error('Error processing and uploading image:', error);
+        console.error('Error processing and uploading media:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
@@ -90,8 +102,9 @@ const uploadImage=async (req, res) => {
 
 
 
+
 module.exports={
     getChatData,
     postChat,
-    uploadImage
+    uploadMedia
 }

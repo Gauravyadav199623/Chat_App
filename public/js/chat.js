@@ -24,77 +24,104 @@ const token = localStorage.getItem('token');
     const tokenData=parseJwt(token)
     const tokenName=parseJwt(token).name
     // console.log(tokenData),"tokenDatatokenDatatokenDatatokenData"
-  // Event listener for receiving chat messages from the server
-  socket.on('chatMessage', (data) => {
+socket.on('chatMessage', (data) => {
     console.log('Received chat message from server:', data);
-    // Update the chat interface with the new message or image
-    if (data.messageType === 'text')
-     {
+
+    // Update the chat interface with the new message, image, or video
+    if (data.messageType === 'text') {
         const messageHTML = `<p class="otherMessage"><strong>${data.name}:</strong> ${data.message}</p>`;
         chatBox.innerHTML += messageHTML;
-    } else if (data.messageType === 'image') {
+    } else if (data.message && Array.isArray(data.message) && data.message.length > 0) {
+        console.log("getting media>>>>>>>>>>>>>>>>>>>>");
+        console.log(`Received ${data.messageType} URL:`, data.message);
 
-        console.log('Image URL:', data.message);
+        // Flatten the nested array and iterate through each image URL
+        const flattenedImageUrls = data.message.flat();
+        flattenedImageUrls.forEach(imageUrl => {
+            let mediaHTML;
+            if (data.messageType === 'image') {
+                mediaHTML = `<p class="otherMessage"><strong>${data.name}:</strong> <img src="${imageUrl}" alt="Image" style="max-width: 300px; max-height: 200px; object-fit: contain;" /></p>`;
+            } else if (data.messageType === 'video') {
+                mediaHTML = `<p class="otherMessage"><strong>${data.name}:</strong> <video src="${imageUrl}" alt="Video" controls style="max-width: 300px; max-height: 200px; object-fit: contain;"></video></p>`;
+            }
 
-        const imageHTML = `<p class="otherMessage"><strong>${data.name}:</strong> <img src="${data.message}" alt="Image" style="max-width: 300px; max-height: 200px;" /></p>`;
-        chatBox.innerHTML += imageHTML;
-    }
-    chatBox.scrollTop = chatBox.scrollHeight;
-});
-    
-   const fetchChatData = async () => {
-            try {
-                
-                // Retrieve messages from local storage
-                const localMessages = getMessagesFromLocal();
-                console.log(localMessages,"....localMessages");
-                
-
-                // Fetch new messages from the backend since the latest local message
-                const latestLocalMessageTimestamp = getLatestLocalMessageTimestampForGroup(localMessages, groupId);
-                const response = await axios.get('getChatData', { headers: { "Authorization": token, "Latest-Local-Timestamp": latestLocalMessageTimestamp } });
-                console.log(response.data,"..........response.data");
-                //!user
-                let currentUserName=response.data.user.name;
-                console.log(currentUserName);
-
-                // Combine local and new messages
-                const allMessages = [...localMessages, ...response.data.chat];
-
-                // Save all messages to local storage
-                saveMessagesToLocal(allMessages);
-
-                // Update the chatBox with all messages
-                chatBox.innerHTML = '';
-                console.log(allMessages,"......allMessages");
-                allMessages.forEach(msg => {
-                    const sender = msg.userId === userId ? 'You' : msg.user.name;
-                    const messageClass = msg.userId === userId ? 'userMessage' : 'otherMessage';
-                    if (msg.groupId === groupId) {
-                        if(msg.isImage==false)
-                        {
-                            const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
-                            chatBox.innerHTML += messageHTML;
-                        }
-                        else {
-                            const imageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> <img src="${msg.message}" alt="Image" style="max-width: 300px; max-height: 200px;" /></p>`;
-                            chatBox.innerHTML += imageHTML;
-                        }
-            } 
-            // else{
-            //     chatBox.innerHTML = `<h3 style="color: red;">hello ${response.data.user.name}, join a group to start the conversation</h3>`;
-            // }              
+            if (mediaHTML) {
+                chatBox.innerHTML += mediaHTML;
+                updateScroll();
+            } else {
+                console.error('Invalid media data:', data);
+            }
         });
 
-                // Scroll to the bottom of the chatBox to show the latest messages
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (error) {
-                console.error('Error fetching chat data:', error);
-            }
-        };
+        updateScroll();
+    } else {
+        console.error('Invalid media data:', data);
+    }
+});
+
+    
+
+function updateScroll() {
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+    
+const fetchChatData = async () => {
+    try {
+        // Retrieve messages from local storage
+        const localMessages = getMessagesFromLocal();
+        console.log(localMessages, "....localMessages");
+
+        // Fetch new messages from the backend since the latest local message
+        const latestLocalMessageTimestamp = getLatestLocalMessageTimestampForGroup(localMessages, groupId);
+        const response = await axios.get('getChatData', { headers: { "Authorization": token, "Latest-Local-Timestamp": latestLocalMessageTimestamp } });
+        console.log(response.data, "..........response.data");
+        //!user
+        let currentUserName = response.data.user.name;
+        console.log(currentUserName);
+
+        // Combine local and new messages
+        const allMessages = [...localMessages, ...response.data.chat];
+
+        // Save all messages to local storage
+        saveMessagesToLocal(allMessages);
+
+        // Update the chatBox with all messages
+        chatBox.innerHTML = '';
+        console.log(allMessages, "......allMessages");
+
+    allMessages.forEach(msg => {
+    const sender = msg.userId === userId ? 'You' : msg.user.name;
+    const messageClass = msg.userId === userId ? 'userMessage' : 'otherMessage';
+
+    if (msg.groupId === groupId) {
+        const messageType = msg.isMedia ? msg.mediaType : 'text';
+
+        if (messageType === 'text') {
+            const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
+            chatBox.innerHTML += messageHTML;
+        }
+
+        if (messageType === 'image') {
+            const imageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> <img src="${msg.message}" alt="Image" style="max-width: 300px; max-height: 200px; object-fit: contain;" /></p>`;
+            chatBox.innerHTML += imageHTML;
+        }
+
+        if (messageType === 'video') {
+            const videoHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> <video src="${msg.message}" alt="Video" style="max-width: 300px; max-height: 200px; object-fit: contain;"></video></p>`;
+            chatBox.innerHTML += videoHTML;
+        }
+    }
+});
+        // Scroll to the bottom of the chatBox to show the latest messages
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } catch (error) {
+        console.error('Error fetching chat data:', error);
+    }
+};
+
 
         // Function to retrieve messages from local storage
-        const getMessagesFromLocal = () => {
+    const getMessagesFromLocal = () => {
             const storedMessages = localStorage.getItem('chatMessages');
             return storedMessages ? JSON.parse(storedMessages) : [];
         };
@@ -148,72 +175,57 @@ messageForm.addEventListener('submit', async function (event) {
     event.preventDefault();
     
     const messageInput = document.getElementById('messageInput');
-    const fileInput = document.getElementById('imageInput');
+    const fileInput = document.getElementById('fileInput');
 
     const message = messageInput.value.trim();
-    const file = fileInput.files[0];
+    const files = fileInput.files;
 
-
-    if (message === '' && !file) {
+    if (message === '' && files.length === 0) {
         return; // Don't send empty messages
     }
 
     try {
-        if (file) {
-            // If an image is selected, upload it and send the image URL
+        if (files.length > 0) {
+            // If files are selected, upload them and send the media URLs
             const formData = new FormData();
-            formData.append('image', file);
             formData.append('groupId', groupId);
 
-            const response = await axios.post('/uploadImage', formData, {
+            for (const file of files) {
+                formData.append('media', file);
+            }
+
+            const response = await axios.post('/uploadMedia', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     'Authorization': token
                 }
             });
 
-            // Emit the 'chatMessage' event to the server with the image URL
-            socket.emit('chatMessage', { messageType: 'image', message: response.data.mediaUrl, groupId, tokenName });
-            fetchChatData(groupId);
+            // Determine the media type based on file extension
+            const mediaType = response.data.mediaType;
 
-
-        }else{
-            
-
+            // Emit the 'chatMessage' event to the server with the media URLs and type
+            socket.emit('chatMessage', { messageType: mediaType, message: response.data.mediaUrls, groupId, tokenName });
+            fetchChatDataForGroup(groupId);
+        } else {
+            // Handle sending text messages
             const res = await axios.post('/postChat', { message, groupId }, { headers: { "Authorization": token } });
-            console.log(res.data,"sent chat data");
 
             if (res.status === 201) {
                 // Emit the 'chatMessage' event to the server after successfully posting to the backend
-                //!socket
-                socket.emit('chatMessage', {messageType: 'text',message, groupId,tokenName} );
-                
-                // Fetch updated chat data after sending the message
+                socket.emit('chatMessage', { messageType: 'text', message, groupId, tokenName });
                 fetchChatDataForGroup(groupId);
             }
         }
     } catch (error) {
         console.error('Error sending message:', error);
-            }
-
+    }
 
     messageInput.value = '';
-    imageInput.value = '';
-
+    fileInput.value = '';
 });
-async function uploadImage(imageFile) {
-    const formData = new FormData();
-    formData.append('image', imageFile);
 
-    const response = await axios.post('/uploadImage', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': token
-        }
-    });
 
-    return response.data.mediaUrl; // Assuming your server returns the media URL
-}
 
 
 
@@ -330,6 +342,8 @@ const fetchGroupsData = async () => {
         userGroups.forEach(group => {
             const groupButton = document.createElement('button');
             groupButton.textContent = group.groupName;
+            groupButton.className="btn btn-primary buttonGrp"
+            // groupButton.className="buttonGrp"
             groupButton.addEventListener('click', () => {
                 // Navigate to the group chat page
                 groupId = group.id;
@@ -364,16 +378,27 @@ const fetchGroupsData = async () => {
 
         groupChat.forEach(msg => {
             const user = users.find(user => user.id === msg.userId);
+
             const sender = msg.userId === userId ? 'You' : (user?.name || 'Unknown User');
             const messageClass = msg.userId === userId ? 'userMessage' : 'otherMessage';
-            if(msg.isImage==false)
-            {
-                const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
-                chatBox.innerHTML += messageHTML;
-            }
-            else {
-                const imageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> <img src="${msg.message}" alt="Image" style="max-width: 300px; max-height: 200px;" /></p>`;
-                chatBox.innerHTML += imageHTML;
+        
+            if (msg.groupId === groupId) {
+                const messageType = msg.isMedia ? msg.mediaType : 'text';
+        
+                if (messageType === 'text') {
+                    const messageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> ${msg.message}</p>`;
+                    chatBox.innerHTML += messageHTML;
+                }
+        
+                if (messageType === 'image') {
+                    const imageHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> <img src="${msg.message}" alt="Image" style="max-width: 300px; max-height: 200px; object-fit: contain;" /></p>`;
+                    chatBox.innerHTML += imageHTML;
+                }
+        
+                if (messageType === 'video') {
+                    const videoHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> <video src="${msg.message}" alt="Video" style="max-width: 300px; max-height: 200px; object-fit: contain;"></video></p>`;
+                    chatBox.innerHTML += videoHTML;
+                }
             }
         });
         // socket.emit('chatMessage', {message, groupId} );

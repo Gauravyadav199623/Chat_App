@@ -8,8 +8,9 @@ const sequelize=require('./util/database');
 
 const cors=require("cors")
 const http = require('http');
-// const socketIO = require('socket.io');
 const app=express()
+const cronService = require('./services/cron');
+cronService.job.start();
 require('dotenv').config();
 
 
@@ -55,40 +56,34 @@ io.on('connection', (socket) => {
 
     socket.on('chatMessage', (data) => {
         console.log('Received chat message on server:', data);
-        if(data.messageType=="text")
-        {
-            io.to(data.groupId).emit('chatMessage', { messageType:data.messageType,message: data.message, groupId: data.groupId,name:data.tokenName });
-        }
-        else{
+
+        // Check if the received messages is an array
+        if (Array.isArray(data.messages)) {
+            // Iterate over the array and emit each message to the group
+            data.messages.forEach((message) => {
+                io.to(data.groupId).emit('chatMessage', {
+                    messageType: data.messageType,
+                    message: [message],
+                    groupId: data.groupId,
+                    name: data.tokenName
+                });
+            });
+        } else {
+            // Handle single message
             io.to(data.groupId).emit('chatMessage', {
-                messageType:data.messageType,
-                message:  data.message,
+                messageType: data.messageType,
+                message: [data.message],
                 groupId: data.groupId,
-                name:data.tokenName});
-            }
+                name: data.tokenName
+            });
+        }
     });
 
     socket.on('joinGroup', (groupId) => {
-        console.log("groupId join",groupId);
+        console.log("groupId join", groupId);
         socket.join(groupId);
     });
-
 });
-
-
-
-// const multer = require('multer');
-// const { uploadToS3 } = require('./services/S3services'); // Adjust the path accordingly
-
-
-// // Set up multer to handle file uploads
-// const storage = multer.memoryStorage(); // Store files in memory
-// const upload = multer({ storage: storage });
-
-// // Your route for handling image uploads
-// app.post('/uploadImage', upload.single('image'), );
-
-
 
 
 

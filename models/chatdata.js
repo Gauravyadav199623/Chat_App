@@ -13,9 +13,12 @@ const Chat =sequelize.define('chat',{
         unique:true
     },
     message:Sequelize.TEXT(),
-    isImage:{
+    isMedia:{
         type : Sequelize.BOOLEAN , 
       defaultValue : false
+    },
+    mediaType:{
+        type:Sequelize.STRING,
     }
 })
 

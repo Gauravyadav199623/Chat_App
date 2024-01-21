@@ -28,7 +28,7 @@
             /* Adjust styles for the messages section */
         }
 
-        #messageForm {
+        /* #messageForm {
             position: fixed;
             bottom: 25px;
             left: 50%;
@@ -36,7 +36,9 @@
             display: flex;
             justify-content: space-between;
             width: 80%;
-        }
+            left: calc(100% - 350px);
+             /* Adjust 350px as needed for desired spacing *
+        } */
 
         #messageInput {
             flex-grow: 1;
@@ -44,7 +46,7 @@
         }
         
         #chatBox {
-            height: 300px;
+            height: 80%;
             overflow-y: scroll;
             border: 1px solid #ccc;
             padding: 10px;
@@ -84,6 +86,15 @@
             list-style-type: none;
 
         }
+        .buttonGrp {
+    width: 100%; /* Set width to 150 pixels */
+    height: 40px; /* Set height to 40 pixels */
+    font-size: 16px; /* Set font size for consistent button height */
+    padding: 10px 20px;
+    box-sizing: border-box; /* Include padding and border in width/height */
+
+
+}
     </style>
 </head>
 <body>
@@ -91,9 +102,9 @@
         <div id="groups">
             <!-- Content for the groups section goes here -->
             <h2>Groups</h2>
-            <button onclick="allGroupMember(userId)">Group Member</button><br>
+            <button class="btn btn-info" onclick="allGroupMember(userId)">Group Member</button><br><br>
             <ul id="groupList"></ul>
-            <button id="createGroupButton">Create New Group</button><br>
+            <button id="createGroupButton" class="btn btn-primary">Create New Group</button><br>
             <div id="groupManagement">
                 <!-- <h3>Group Members</h3> -->
                 <ul id="memberList"><!-- List of group members --></ul>
@@ -103,12 +114,21 @@
         <div id="messages">
             <!-- Content for the messages section goes here -->
             <div id="chatBox"></div>
-            <form id="messageForm"  >
-                <input id="messageInput" type="text" name="message" placeholder="Type your message...">
-                <!-- Inside your form -->
-                <input type="file" id="imageInput" accept="image/*">
+            <br>
+            <form id="messageForm"  method="post" enctype="multipart/form-data">
+                <div>
 
-                <button type="submit">Send</button>
+                <div>
+                    <input id="messageInput" class="form-control"  type="text" name="message" placeholder="Type your message...">
+                </div>
+                <!-- Inside your form -->
+                <!-- <input type="file" id="imageInput" accept="image/*"> -->
+                <div>
+                    <input type="file" class="form-control" id="fileInput" name="file" multiple />
+                </div>
+                <button type="submit" class="btn btn-primary">Send</button>
+            </div>
+
             </form>
         </div>
     </div>
