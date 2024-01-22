@@ -5,7 +5,7 @@ const express=require('express')
 const chatController=require('../controller/chat');
 const UserAuth=require('../MiddleWare/auth')
 
-const multerMiddleware = require('../middleware/multer')
+const multerMiddleware = require('../MiddleWare/multer')
 const upload = multerMiddleware.multer.array('media');
 
 const router=express.Router()
