@@ -30,8 +30,9 @@ async function onSubmit(e) {
         
         if (response.status === 201) {
             console.log('User added to the common group successfully!');
-            // Redirect to the desired page after signup, e.g., dashboard
-            window.location.href = 'chat';
+            
+            // window.location.href = 'chat';
+            // window.location.href = 'login';
         } else {
             console.error('Error adding user to the common group:', addToCommonGroupResponse.data.error);
         }

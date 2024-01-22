@@ -100,12 +100,14 @@ Group.belongsToMany(User, {through : UserAndGroup})
 
 
 
+const PORT = process.env.PORT || 4000;
 sequelize
-.sync()
-// .sync({force:true})
-.then(result=>{
-    server.listen(4000);
-})
-.catch(err=>{
-    console.log(err)
-});
+  .sync()
+  .then(result => {
+    app.listen(PORT);
+    console.log(`server is running at port:${PORT}`);
+  })
+  .catch(err => {
+    console.log(err);
+  });
+
