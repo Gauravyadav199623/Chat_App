@@ -9,7 +9,7 @@ const { text } = require('body-parser');
 const getChatData = async (req, res, next) => {
     try {
         const groupId = req.query.groupId;
-
+        console.log(req.query,".....query of getchat data");
         let chatData;
         if (groupId) {
             // If groupId is provided, include the Group model in the query
@@ -31,6 +31,43 @@ const getChatData = async (req, res, next) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: err.toString() });
+    }
+};
+
+
+const { Op } = require('sequelize');
+
+
+
+const chatgetChatData= async (req, res) => {
+    try {
+        const groupId = req.params.groupId;
+
+        let messages;
+
+        if (req.headers['latest-local-timestamp']) {
+            // If Latest-Local-Timestamp header is present, fetch only new messages
+            messages = await Chat.findAll({
+                where: {
+                    groupId: groupId,
+                    createdAt: {
+                        [Op.gt]: new Date(req.headers['latest-local-timestamp'])
+                    }
+                }
+            });
+        } else {
+            // If Latest-Local-Timestamp header is not present, fetch all messages
+            messages = await Chat.findAll({
+                where: {
+                    groupId: groupId
+                }
+            });
+        }
+
+        res.status(200).json({ chat: messages });
+    } catch (error) {
+        console.error('Error fetching new messages:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 
@@ -106,5 +143,6 @@ const uploadMedia = async (req, res) => {
 module.exports={
     getChatData,
     postChat,
-    uploadMedia
+    uploadMedia,
+    chatgetChatData
 }

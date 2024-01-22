@@ -58,8 +58,14 @@ const getAllGroups=async (req, res, next) => {
 const getGroupChat=async (req, res) => {
     try {
         const groupId = req.params.groupId;
-        const groupChat = await Chat.findAll({ where: { groupId } });
-        res.status(200).json({ chat: groupChat });
+        const groupChat = await Chat.findAll({
+            include: [
+                { model: User },
+                { model: Group }
+            ],
+            where: { groupId: groupId }
+        });
+        res.status(200).json({ chat: groupChat, user: req.user });
     } catch (error) {
         console.error('Error fetching chat data:', error);
         res.status(500).json({ error: 'Internal Server Error' });

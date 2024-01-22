@@ -42,7 +42,7 @@ socket.on('chatMessage', (data) => {
             if (data.messageType === 'image') {
                 mediaHTML = `<p class="otherMessage"><strong>${data.name}:</strong> <img src="${imageUrl}" alt="Image" style="max-width: 300px; max-height: 200px; object-fit: contain;" /></p>`;
             } else if (data.messageType === 'video') {
-                mediaHTML = `<p class="otherMessage"><strong>${data.name}:</strong> <video src="${imageUrl}" alt="Video" controls style="max-width: 300px; max-height: 200px; object-fit: contain;"></video></p>`;
+                mediaHTML = `<p class="otherMessage"><strong>${data.name}:</strong> <video src="${imageUrl}" alt="Video" controls style="max-width: 500px; max-height: 500px; object-fit: contain;"></video></p>`;
             }
 
             if (mediaHTML) {
@@ -107,7 +107,7 @@ const fetchChatData = async () => {
         }
 
         if (messageType === 'video') {
-            const videoHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> <video src="${msg.message}" alt="Video" style="max-width: 300px; max-height: 200px; object-fit: contain;"></video></p>`;
+            const videoHTML = `<p class="message ${messageClass}"><strong>${sender}:</strong> <video src="${msg.message}" alt="Video" style="max-width: 500px; max-height: 500px; object-fit: contain;"></video></p>`;
             chatBox.innerHTML += videoHTML;
         }
     }
@@ -363,10 +363,30 @@ const fetchGroupsData = async () => {
  // Function to fetch and display chat data for a specific group
  const fetchChatDataForGroup = async (groupId) => {
     try {
-        const response = await axios.get(`/getChatData/${groupId}`, { headers: { "Authorization": token } });
+
+        
+        // Retrieve messages from local storage
+        const localMessages = getMessagesFromLocal();
+        console.log(localMessages, "....localMessages");
+
+
+        const latestLocalMessageTimestamp = getLatestLocalMessageTimestampForGroup(localMessages, groupId);
+
+
+
+        const response = await axios.get(`/chatgetChatData/${groupId}`, { headers: { "Authorization": token, "Latest-Local-Timestamp": latestLocalMessageTimestamp } });
+
         const groupChat = response.data.chat;
         console.log(response, ".......fetchChatDataForGroup");
         console.log(groupChat, "....groupChat");
+
+
+        
+        // Combine local and new messages
+        const allMessages = [...localMessages, ...response.data.chat];
+
+        saveMessagesToLocal(allMessages);
+
 
         // Fetch all users
         const usersResponse = await axios.get('/getAllUsers', { headers: { "Authorization": token } });
@@ -376,7 +396,7 @@ const fetchGroupsData = async () => {
         const chatBox = document.getElementById('chatBox');
         chatBox.innerHTML = '';
 
-        groupChat.forEach(msg => {
+        allMessages.forEach(msg => {
             const user = users.find(user => user.id === msg.userId);
 
             const sender = msg.userId === userId ? 'You' : (user?.name || 'Unknown User');
@@ -563,3 +583,4 @@ async function makeNewAdmin(memberId) {
 
 
         fetchGroupsData();
+        // fetchChatData()
